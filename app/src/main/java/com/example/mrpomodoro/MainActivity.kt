@@ -2,29 +2,15 @@ package com.example.mrpomodoro
 
 import android.graphics.Color
 import android.os.Bundle
+import android.os.Vibrator
+import android.os.VibrationEffect
+import android.os.Build
+import android.content.Context
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.example.mrpomodoro.AdviceSlipApiService
 import com.example.mrpomodoro.MyCountDownTimer
-import android.util.Log
-import kotlinx.serialization.*
-import kotlinx.serialization.json.*
-
-
-@Serializable
-data class AdviceSlip(val id: Int, val advice: String)
-
-@Serializable
-data class AdviceResponse(val slip: AdviceSlip)
-
-val jsonString = "{\"slip\": {\"id\": 199, \"advice\": \"Be brave. Even if you're not, pretend to be. No one can tell the difference.\"}}"
-val adviceResponse = Json.decodeFromString<AdviceResponse>(jsonString)
-val advice = adviceResponse.slip.advice
-
-
-
-
 
 class MainActivity : AppCompatActivity() {
 
@@ -34,41 +20,30 @@ class MainActivity : AppCompatActivity() {
     private lateinit var button: Button
     private lateinit var timerText: TextView
     private lateinit var adviceText: TextView
+    private lateinit var vibrator: Vibrator
     private var isResting = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        button = findViewById(R.id.button)  // Replace with your actual button ID
-        timerText = findViewById(R.id.timerText)  // Replace with your actual timer TextView ID
-        adviceText = findViewById(R.id.adviceText)  // Replace with your actual advice TextView ID
+        button = findViewById(R.id.button)
+        timerText = findViewById(R.id.timerText)
+        adviceText = findViewById(R.id.adviceText)
+        vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
 
         workTimer = MyCountDownTimer(25 * 60 * 1000, 1000, timerText)
         restTimer = MyCountDownTimer(5 * 60 * 1000, 1000, timerText)
 
         adviceService = AdviceSlipApiService { advice ->
-            Log.d("MainActivity", "New advice: $advice") // Log when new advice is posted
-            val stringBuilder = StringBuilder()
-            for (c in advice) {
-                if (c.toInt() in 32..126) { // ASCII range
-                    stringBuilder.append(c)
-                }
-            }
-            val cleanAdvice = stringBuilder.toString()
+            val cleanAdvice = advice.filter { it.isLetterOrDigit() || it.isWhitespace() }
             runOnUiThread {
                 adviceText.text = cleanAdvice
             }
         }
 
-
-
-        val params = button.layoutParams
-        params.width = 400
-        params.height = 200
-
-        button.layoutParams = params
         button.setOnClickListener {
+            vibrator.cancel()
             when (button.text) {
                 "START" -> {
                     button.text = "STOP"
@@ -111,6 +86,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun vibrate() {
-        // Implement your vibration logic here
+        // Check if device has a vibrator
+        if (vibrator.hasVibrator()) {
+            // Vibrate with a pattern. Sleep for 500, vibrate for 500, sleep for 500 and so on
+            val pattern = longArrayOf(500, 500, 500, 500)
+            // The "-1" here means to repeat indefinitely
+            // "0" would play the pattern once, then stop
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createWaveform(pattern, 0))
+            } else {
+                vibrator.vibrate(pattern, 0)  // The "0" means to repeat the pattern starting at the beginning
+            }
+        }
     }
 }
