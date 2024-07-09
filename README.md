@@ -47,6 +47,3 @@ Contributions are welcome! Please read the [contributing guidelines](link_to_you
 ## License
 
 This project is licensed under the [MIT License](https://opensource.org/licenses/MIT).
-
-```
-Remember to replace the "YourUsername" in the git clone command with your actual GitHub username. Also, you might want to replace the "link_to_your_contributing_guidelines.md" with an actual link if you have one.
